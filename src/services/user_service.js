@@ -3,7 +3,7 @@ import bycript from "bcrypt";
 
 export const findAll = async (req, res) => {
   try {
-    const [result] = await pool.query("SELECT * FROM usuarios");
+    const [result] = await pool.query("SELECT * FROM users");
     if (result.length <= 0) {
       return res.status(204);
     }
@@ -18,7 +18,7 @@ export const findById = async (req, res) => {
   try {
     const { id_user } = req.params;
     const [result] = await pool.query(
-      "SELECT * FROM usuarios WHERE id_usuario = ?",
+      "SELECT * FROM users WHERE id_user = ?",
       [id_user]
     );
     if (result.length === 0) {
@@ -37,7 +37,7 @@ export const insertUser = async (req, res) => {
     const { username, password, name, avatar } = req.body;
     const hashedPassword = await bycript.hash(password, 10);
     const [result] = await pool.query(
-      "INSERT INTO usuarios (name,username,password,avatar,create_date) VALUES (?,?,?,?,?)",
+      "INSERT INTO users (name,username,password,avatar,create_date) VALUES (?,?,?,?,?)",
       [name, username, hashedPassword, avatar, dateGenerate()]
     );
     if (result.affectedRows > 0) {
@@ -56,7 +56,7 @@ export const updateUser = async (req, res) => {
     const { id_user } = req.params;
     const { username, password, name, avatar } = req.body;
     const [result] = await pool.query(
-      "UPDATE usuarios SET name = IFNULL(?,name), username = IFNULL(?,username) , avatar = IFNULL(?,avatar), password = IFNULL(?,password) WHERE id_usuario = ?",
+      "UPDATE users SET name = IFNULL(?,name), username = IFNULL(?,username) , avatar = IFNULL(?,avatar), password = IFNULL(?,password) WHERE id_user = ?",
       [name, username, avatar, password, id_user]
     );
     if (result.affectedRows > 0) {
@@ -74,7 +74,7 @@ export const deleteUser = async (req, res) => {
   try {
     const { id_user } = req.params;
     const [result] = await pool.query(
-      "DELETE FROM usuarios WHERE id_usuario = ?",
+      "DELETE FROM users WHERE id_user = ?",
       [id_user]
     );
     if (result.affectedRows > 0) {
