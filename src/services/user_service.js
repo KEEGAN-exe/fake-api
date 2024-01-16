@@ -4,8 +4,8 @@ import bycript from "bcrypt";
 export const findAll = async (req, res) => {
   try {
     const [result] = await pool.query("SELECT * FROM users");
-    if (result.length <= 0) {
-      return res.status(204);
+    if (result.length === 0) {
+      return res.json({ message: "No hay registros" });
     }
     return res.json(result);
   } catch (err) {
@@ -17,10 +17,9 @@ export const findAll = async (req, res) => {
 export const findById = async (req, res) => {
   try {
     const { id_user } = req.params;
-    const [result] = await pool.query(
-      "SELECT * FROM users WHERE id_user = ?",
-      [id_user]
-    );
+    const [result] = await pool.query("SELECT * FROM users WHERE id_user = ?", [
+      id_user,
+    ]);
     if (result.length === 0) {
       return res.status(400).json({ message: `El usuario no existe` });
     }
@@ -73,10 +72,9 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id_user } = req.params;
-    const [result] = await pool.query(
-      "DELETE FROM users WHERE id_user = ?",
-      [id_user]
-    );
+    const [result] = await pool.query("DELETE FROM users WHERE id_user = ?", [
+      id_user,
+    ]);
     if (result.affectedRows > 0) {
       return res.json({ message: "usuario eliminado" });
     } else {
