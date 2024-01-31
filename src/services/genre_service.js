@@ -25,7 +25,7 @@ export const insertGenre = async (req, res) => {
     if (result.affectedRows > 0) {
       return res.status(201).json({ message: "Genero agregado" });
     } else {
-      return res.status(201).json({ message: "El genero no fue agregado" });
+      return res.status(400).json({ message: "El genero no fue agregado" });
     }
   } catch (err) {
     return handleException(res, err);
