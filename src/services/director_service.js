@@ -11,7 +11,7 @@ export const findAll = async (req, res) => {
       return res.json(result);
     }
   } catch (err) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 
@@ -28,7 +28,7 @@ export const findById = async (req, res) => {
       return res.json(result[0]);
     }
   } catch (err) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 
@@ -60,24 +60,44 @@ export const findByNationality = async (req, res) => {
       return res.json(result);
     }
   } catch (error) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 
 export const insertDirector = async (req, res) => {
   try {
     const { name, nationality, birth_date, birth_place } = req.body;
+
+    const currentDate = new Date();
+    const directorBirthDate = new Date(birth_date);
+
+    if (directorBirthDate > currentDate) {
+      return res
+        .status(400)
+        .json({ message: "La fecha de nacimiento no puede ser en el futuro" });
+    }
+
+    const maxAllowedBirthYear = currentDate.getFullYear() - 100;
+    const directorBirthYear = directorBirthDate.getFullYear();
+
+    if (directorBirthYear < maxAllowedBirthYear) {
+      return res
+        .status(400)
+        .json({ message: "Fecha de nacimiento no válida. Demasiado antigua." });
+    }
+
     const [result] = await pool.query(
       "INSERT INTO directors (name,nationality,birth_date,birth_place) VALUES (?,?,?,?)",
       [name, nationality, birth_date, birth_place]
     );
+
     if (result.affectedRows > 0) {
       return res.status(201).json({ message: "Director agregado" });
     } else {
-      return res.status(400).json({ message: `El director no fue agregado` });
+      return res.status(400).json({ message: "El director no fue agregado" });
     }
   } catch (err) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 
@@ -94,6 +114,27 @@ export const updateDirector = async (req, res) => {
         .status(404)
         .json({ message: "El director no existe en la base de datos" });
     } else {
+      const currentDate = new Date();
+      const directorBirthDate = new Date(birth_date);
+
+      if (directorBirthDate > currentDate) {
+        return res
+          .status(400)
+          .json({
+            message: "La fecha de nacimiento no puede ser en el futuro",
+          });
+      }
+
+      const maxAllowedBirthYear = currentDate.getFullYear() - 100;
+      const directorBirthYear = directorBirthDate.getFullYear();
+
+      if (directorBirthYear < maxAllowedBirthYear) {
+        return res
+          .status(400)
+          .json({
+            message: "Fecha de nacimiento no válida. Demasiado antigua.",
+          });
+      }
       const [result] = await pool.query(
         "UPDATE directors SET name = IFNULL(?,name), nationality = IFNULL(?,nationality), birth_date = IFNULL(?,birth_date), birth_place = IFNULL(?,birth_place) WHERE id_director = ?",
         [name, nationality, birth_date, birth_place, id_director]
@@ -105,7 +146,7 @@ export const updateDirector = async (req, res) => {
       }
     }
   } catch (err) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 
@@ -132,7 +173,7 @@ export const deleteDirector = async (req, res) => {
       }
     }
   } catch (err) {
-    return handleException(res, err.mysqlMessage);
+    return handleException(res, err);
   }
 };
 

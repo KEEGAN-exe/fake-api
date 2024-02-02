@@ -133,7 +133,6 @@ export const findByTitle = async (req, res) => {
   }
 };
 
-
 export const insertMovie = async (req, res) => {
   try {
     const {
@@ -169,6 +168,24 @@ export const insertMovie = async (req, res) => {
       return res
         .status(400)
         .json({ error: "El id del director proporcionado no es válido" });
+    }
+
+    const currentDate = new Date();
+    const movieReleaseDate = new Date(release_date);
+
+    if (movieReleaseDate > currentDate) {
+      return res
+        .status(400)
+        .json({ message: "La fecha de lanzamiento no puede ser en el futuro" });
+    }
+
+    const maxAllowedReleaseYear = currentDate.getFullYear() - 80;
+    const movieReleaseYear = movieReleaseDate.getFullYear();
+
+    if (movieReleaseYear < maxAllowedReleaseYear) {
+      return res.status(400).json({
+        message: "Fecha de lanzamiento no válida. Demasiado antigua.",
+      });
     }
 
     const [resultMovies] = await pool.query(
@@ -236,6 +253,24 @@ export const updateMovie = async (req, res) => {
 
     if (existingMovie.length === 0) {
       return res.status(404).json({ error: "La película no existe" });
+    }
+
+    const currentDate = new Date();
+    const movieReleaseDate = new Date(release_date);
+
+    if (movieReleaseDate > currentDate) {
+      return res
+        .status(400)
+        .json({ message: "La fecha de lanzamiento no puede ser en el futuro" });
+    }
+
+    const maxAllowedReleaseYear = currentDate.getFullYear() - 80;
+    const movieReleaseYear = movieReleaseDate.getFullYear();
+
+    if (movieReleaseYear < maxAllowedReleaseYear) {
+      return res.status(400).json({
+        message: "Fecha de lanzamiento no válida. Demasiado antigua.",
+      });
     }
 
     if (genres !== undefined && genres.length > 0) {
