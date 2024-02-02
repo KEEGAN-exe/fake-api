@@ -15,6 +15,39 @@ export const findAll = async (req, res) => {
   }
 };
 
+export const findById = async (req, res) => {
+  try {
+    const { id_genre } = req.params;
+    const [result] = await pool.query(
+      "SELECT id_genre, name, image_url, description FROM genres WHERE is_active = 1 AND id_genre = ?",
+      [id_genre]
+    );
+    if (result.length === 0) {
+      return res.status(404).json(result);
+    } else {
+      return res.json(result[0]);
+    }
+  } catch (error) {
+    return handleException(res, err);
+  }
+};
+
+export const findByName = async (req, res) => {
+  try {
+    const { name } = req.params;
+    const [result] = await pool.query(
+      `SELECT id_genre, name, image_url, description FROM genres WHERE is_active = 1 AND name LIKE "${name}%" ORDER BY id_genre`
+    );
+    if (result.length === 0) {
+      return res.status(404).json(result);
+    } else {
+      return res.json(result);
+    }
+  } catch (error) {
+    return handleException(res, req);
+  }
+};
+
 export const insertGenre = async (req, res) => {
   try {
     const { name, image_url, description } = req.body;

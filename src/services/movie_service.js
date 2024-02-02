@@ -38,9 +38,101 @@ export const findAll = async (req, res) => {
     const [result] = await pool.query(query);
     return res.json(result);
   } catch (error) {
-    return handleException(res, err);
+    return handleException(res, error);
   }
 };
+
+export const findById = async (req, res) => {
+  try {
+    const { id_movie } = req.params;
+    const [result] = await pool.query(
+      `SELECT
+      m.id_movie,
+      m.title,
+      m.duration,
+      DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+      m.country,
+      m.production_company,
+      m.poster_image,
+      m.trailer_video,
+      m.sinopsis,
+      JSON_OBJECT(
+        'id_director', d.id_director,
+        'name', d.name,
+        'nationality', d.nationality,
+        'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+        'birth_place', d.birth_place
+      ) AS director,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id_genre', g.id_genre,
+          'name', g.name
+        )
+      ) AS genres
+    FROM
+      movies m
+      JOIN directors d ON m.id_director = d.id_director
+      LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+      LEFT JOIN genres g ON mg.id_genre = g.id_genre
+    WHERE m.active = true AND m.id_movie = ?
+    GROUP BY
+      m.id_movie`,
+      [id_movie]
+    );
+    if (result.length === 0) {
+      return res.status(404).json(result);
+    } else {
+      return res.json(result[0]);
+    }
+  } catch (error) {
+    return handleException(res, error);
+  }
+};
+
+export const findByTitle = async (req, res) => {
+  try {
+    const { title } = req.params;
+    const [result] = await pool.query(`SELECT
+    m.id_movie,
+    m.title,
+    m.duration,
+    DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+    m.country,
+    m.production_company,
+    m.poster_image,
+    m.trailer_video,
+    m.sinopsis,
+    JSON_OBJECT(
+      'id_director', d.id_director,
+      'name', d.name,
+      'nationality', d.nationality,
+      'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+      'birth_place', d.birth_place
+    ) AS director,
+    JSON_ARRAYAGG(
+      JSON_OBJECT(
+        'id_genre', g.id_genre,
+        'name', g.name
+      )
+    ) AS genres
+  FROM
+    movies m
+    JOIN directors d ON m.id_director = d.id_director
+    LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+    LEFT JOIN genres g ON mg.id_genre = g.id_genre
+  WHERE m.active = true AND m.title LIKE "${title}%"
+  GROUP BY
+    m.id_movie`);
+    if (result.length === 0) {
+      return res.status(404).json(result);
+    } else {
+      return res.json(result);
+    }
+  } catch (error) {
+    return handleException(res, error);
+  }
+};
+
 
 export const insertMovie = async (req, res) => {
   try {
@@ -117,7 +209,7 @@ export const insertMovie = async (req, res) => {
       }
     }
   } catch (error) {
-    return handleException(res, err);
+    return handleException(res, error);
   }
 };
 
@@ -191,7 +283,7 @@ export const updateMovie = async (req, res) => {
 
     return res.json({ message: "Película actualizada exitosamente" });
   } catch (error) {
-    return handleException(res, err);
+    return handleException(res, error);
   }
 };
 
@@ -210,7 +302,7 @@ export const deleteMovie = async (req, res) => {
       return res.json({ message: "Pelicula eliminada" });
     }
   } catch (error) {
-    return handleException(res, err);
+    return handleException(res, error);
   }
 };
 
