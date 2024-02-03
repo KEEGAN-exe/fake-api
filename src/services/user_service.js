@@ -31,6 +31,21 @@ export const findById = async (req, res) => {
   }
 };
 
+export const findByUsername = async ({ username }) => {
+  try {
+    const [result] = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+    if (result.length === 0) {
+      return null;
+    }
+    return result[0];
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 export const insertUser = async (req, res) => {
   try {
     const { username, password, name, avatar } = req.body;
