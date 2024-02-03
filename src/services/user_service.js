@@ -3,7 +3,9 @@ import bycript from "bcrypt";
 
 export const findAll = async (req, res) => {
   try {
-    const [result] = await pool.query("SELECT * FROM users");
+    const [result] = await pool.query(
+      "SELECT id_user, name, username, password, avatar, DATE_FORMAT(create_date, '%Y-%m-%d') AS create_date FROM users WHERE is_active = true"
+    );
     if (result.length === 0) {
       return res.json({ message: "No hay registros" });
     }
@@ -17,14 +19,15 @@ export const findAll = async (req, res) => {
 export const findById = async (req, res) => {
   try {
     const { id_user } = req.params;
-    const [result] = await pool.query("SELECT * FROM users WHERE id_user = ?", [
-      id_user,
-    ]);
+    const [result] = await pool.query(
+      "SELECT id_user, name, username, password, avatar, DATE_FORMAT(create_date, '%Y-%m-%d') AS create_date FROM users WHERE id_user = ? AND is_active = true",
+      [id_user]
+    );
     if (result.length === 0) {
       return res.status(400).json({ message: `El usuario no existe` });
     }
 
-    return res.json(result);
+    return res.json(result[0]);
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -34,7 +37,7 @@ export const findById = async (req, res) => {
 export const findByUsername = async ({ username }) => {
   try {
     const [result] = await pool.query(
-      "SELECT * FROM users WHERE username = ?",
+      "SELECT * FROM users WHERE username = ? AND is_active = true",
       [username]
     );
     if (result.length === 0) {
@@ -49,6 +52,15 @@ export const findByUsername = async ({ username }) => {
 export const insertUser = async (req, res) => {
   try {
     const { username, password, name, avatar } = req.body;
+    const userExist = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+    if (userExist !== null) {
+      return res
+        .status(404)
+        .json({ message: "El nombre de usuario ya existe" });
+    }
     const hashedPassword = await bycript.hash(password, 10);
     const [result] = await pool.query(
       "INSERT INTO users (name,username,password,avatar,create_date) VALUES (?,?,?,?,?)",
@@ -69,6 +81,15 @@ export const updateUser = async (req, res) => {
   try {
     const { id_user } = req.params;
     const { username, password, name, avatar } = req.body;
+    const userExist = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+    if (userExist !== null) {
+      return res
+        .status(404)
+        .json({ message: "El nombre de usuario ya existe" });
+    }
     const [result] = await pool.query(
       "UPDATE users SET name = IFNULL(?,name), username = IFNULL(?,username) , avatar = IFNULL(?,avatar), password = IFNULL(?,password) WHERE id_user = ?",
       [name, username, avatar, password, id_user]
@@ -87,10 +108,15 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id_user } = req.params;
-    const [result] = await pool.query("DELETE FROM users WHERE id_user = ?", [
-      id_user,
-    ]);
-    if (result.affectedRows > 0) {
+    const [checkUser] = await pool.query(
+      "SELECT * FROM users WHERE is_active = true AND id_user = ?",
+      [id_user]
+    );
+    if (checkUser.length > 0) {
+      const [deleteUser] = await pool.query(
+        "UPDATE users SET is_active = false WHERE id_user = ?",
+        [id_user]
+      );
       return res.json({ message: "usuario eliminado" });
     } else {
       return res.status(400).json({ message: `El usuario no existe` });
