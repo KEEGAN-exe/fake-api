@@ -91,42 +91,216 @@ export const findById = async (req, res) => {
 
 export const findByTitle = async (req, res) => {
   try {
-    const { title } = req.params;
+    const { title } = req.query;
+
+    if (!title) {
+      return res.status(400).json({
+        message: 'El parámetro "title" es obligatorio en la consulta.',
+      });
+    }
+
     const [result] = await pool.query(`SELECT
-    m.id_movie,
-    m.title,
-    m.duration,
-    DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
-    m.country,
-    m.production_company,
-    m.poster_image,
-    m.trailer_video,
-    m.sinopsis,
-    JSON_OBJECT(
-      'id_director', d.id_director,
-      'name', d.name,
-      'nationality', d.nationality,
-      'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
-      'birth_place', d.birth_place
-    ) AS director,
-    JSON_ARRAYAGG(
+      m.id_movie,
+      m.title,
+      m.duration,
+      DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+      m.country,
+      m.production_company,
+      m.poster_image,
+      m.trailer_video,
+      m.sinopsis,
       JSON_OBJECT(
-        'id_genre', g.id_genre,
-        'name', g.name
-      )
-    ) AS genres
-  FROM
-    movies m
-    JOIN directors d ON m.id_director = d.id_director
-    LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
-    LEFT JOIN genres g ON mg.id_genre = g.id_genre
-  WHERE m.active = true AND m.title LIKE "${title}%"
-  GROUP BY
-    m.id_movie`);
+        'id_director', d.id_director,
+        'name', d.name,
+        'nationality', d.nationality,
+        'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+        'birth_place', d.birth_place
+      ) AS director,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id_genre', g.id_genre,
+          'name', g.name
+        )
+      ) AS genres
+    FROM
+      movies m
+      JOIN directors d ON m.id_director = d.id_director
+      LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+      LEFT JOIN genres g ON mg.id_genre = g.id_genre
+    WHERE m.active = true AND m.title LIKE "${title}%"
+    GROUP BY
+      m.id_movie`);
+
     if (result.length === 0) {
       return res.status(404).json(result);
     } else {
       return res.json(result);
+    }
+  } catch (error) {
+    return handleException(res, error);
+  }
+};
+
+export const findByDirectorName = async (req, res) => {
+  try {
+    const { director_name } = req.params;
+
+    if (!director_name) {
+      return res.status(400).json({
+        message: 'El parámetro "director_name" es obligatorio en la consulta.',
+      });
+    }
+
+    const [moviesByDirector] = await pool.query(
+      `SELECT
+      m.id_movie,
+      m.title,
+      m.duration,
+      DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+      m.country,
+      m.production_company,
+      m.poster_image,
+      m.trailer_video,
+      m.sinopsis,
+      JSON_OBJECT(
+        'id_director', d.id_director,
+        'name', d.name,
+        'nationality', d.nationality,
+        'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+        'birth_place', d.birth_place
+      ) AS director,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id_genre', g.id_genre,
+          'name', g.name
+        )
+      ) AS genres
+    FROM
+      movies m
+      JOIN directors d ON m.id_director = d.id_director
+      LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+      LEFT JOIN genres g ON mg.id_genre = g.id_genre
+    WHERE m.active = true AND LOWER(d.name) LIKE LOWER(?)
+    GROUP BY
+      m.id_movie`,
+      [`%${director_name}%`]
+    );
+
+    if (moviesByDirector.length === 0) {
+      return res.status(404).json(moviesByDirector);
+    } else {
+      return res.json(moviesByDirector);
+    }
+  } catch (error) {
+    return handleException(res, error);
+  }
+};
+
+export const filterByDurationRange = async (req, res) => {
+  try {
+    const { duration_min, duration_max } = req.query;
+
+    if (!duration_min || !duration_max) {
+      return res.status(400).json({
+        message:
+          'Los parámetros "duration_min" y "duration_max" son obligatorios en la consulta.',
+      });
+    }
+
+    const [filteredMovies] = await pool.query(
+      `SELECT
+        m.id_movie,
+        m.title,
+        m.duration,
+        DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+        m.country,
+        m.production_company,
+        m.poster_image,
+        m.trailer_video,
+        m.sinopsis,
+        JSON_OBJECT(
+          'id_director', d.id_director,
+          'name', d.name,
+          'nationality', d.nationality,
+          'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+          'birth_place', d.birth_place
+        ) AS director,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id_genre', g.id_genre,
+            'name', g.name
+          )
+        ) AS genres
+      FROM
+        movies m
+        JOIN directors d ON m.id_director = d.id_director
+        LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+        LEFT JOIN genres g ON mg.id_genre = g.id_genre
+      WHERE m.active = true AND m.duration BETWEEN ? AND ?
+      GROUP BY
+        m.id_movie`,
+      [duration_min, duration_max]
+    );
+
+    if (filteredMovies.length === 0) {
+      return res.status(404).json(filteredMovies);
+    } else {
+      return res.json(filteredMovies);
+    }
+  } catch (error) {
+    return handleException(res, error);
+  }
+};
+
+export const filterByDuration = async (req, res) => {
+  try {
+    const { duration } = req.params;
+
+    if (!duration) {
+      return res.status(400).json({
+        message: 'El parámetro "duration" es obligatorio en la consulta.',
+      });
+    }
+
+    const [filteredMovies] = await pool.query(
+      `SELECT
+      m.id_movie,
+      m.title,
+      m.duration,
+      DATE_FORMAT(m.release_date, '%Y-%m-%d') AS release_date,
+      m.country,
+      m.production_company,
+      m.poster_image,
+      m.trailer_video,
+      m.sinopsis,
+      JSON_OBJECT(
+        'id_director', d.id_director,
+        'name', d.name,
+        'nationality', d.nationality,
+        'birth_date', DATE_FORMAT(d.birth_date, '%Y-%m-%d'),
+        'birth_place', d.birth_place
+      ) AS director,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id_genre', g.id_genre,
+          'name', g.name
+        )
+      ) AS genres
+    FROM
+      movies m
+      JOIN directors d ON m.id_director = d.id_director
+      LEFT JOIN movie_genre mg ON m.id_movie = mg.id_movie
+      LEFT JOIN genres g ON mg.id_genre = g.id_genre
+    WHERE m.active = true AND m.duration = ?
+    GROUP BY
+      m.id_movie`,
+      [duration]
+    );
+
+    if (filteredMovies.length === 0) {
+      return res.status(404).json(filteredMovies);
+    } else {
+      return res.json(filteredMovies);
     }
   } catch (error) {
     return handleException(res, error);

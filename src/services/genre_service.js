@@ -34,7 +34,12 @@ export const findById = async (req, res) => {
 
 export const findByName = async (req, res) => {
   try {
-    const { name } = req.params;
+    const { name } = req.query;
+    if (!name) {
+      return res.status(400).json({
+        message: 'El parámetro name es obligatorio en la consulta.',
+      });
+    }
     const [result] = await pool.query(
       `SELECT id_genre, name, image_url, description FROM genres WHERE is_active = 1 AND name LIKE "${name}%" ORDER BY id_genre`
     );

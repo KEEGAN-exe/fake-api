@@ -11,8 +11,8 @@ import {
 const router = Router();
 
 router.get("/genres", findAll);
-router.get("/genres/id/:id_genre", findById);
-router.get("/genres/name/:name", findByName);
+router.get("/genres/search", findByName);
+router.get("/genres/:id_genre", findById);
 router.post("/genres", insertGenre);
 router.patch("/genres/:id_genre", updateGenre);
 router.delete("/genres/:id_genre", deleteGenre);

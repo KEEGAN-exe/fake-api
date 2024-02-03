@@ -52,11 +52,11 @@ export const findByUsername = async ({ username }) => {
 export const insertUser = async (req, res) => {
   try {
     const { username, password, name, avatar } = req.body;
-    const userExist = await pool.query(
+    const [userExist] = await pool.query(
       "SELECT * FROM users WHERE username = ?",
       [username]
     );
-    if (userExist !== null) {
+    if (userExist.length !== 0) {
       return res
         .status(404)
         .json({ message: "El nombre de usuario ya existe" });
@@ -81,11 +81,11 @@ export const updateUser = async (req, res) => {
   try {
     const { id_user } = req.params;
     const { username, password, name, avatar } = req.body;
-    const userExist = await pool.query(
+    const [userExist] = await pool.query(
       "SELECT * FROM users WHERE username = ?",
       [username]
     );
-    if (userExist !== null) {
+    if (userExist.length !== 0) {
       return res
         .status(404)
         .json({ message: "El nombre de usuario ya existe" });

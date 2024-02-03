@@ -3,7 +3,7 @@ import { pool } from "../../database.js";
 export const findAll = async (req, res) => {
   try {
     const [result] = await pool.query(
-      "SELECT name,nationality,birth_date,birth_place FROM directors WHERE is_active = 1"
+      "SELECT id_director,name,nationality,DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,birth_place FROM directors WHERE is_active = 1"
     );
     if (result.length === 0) {
       return res.status(404).json(result);
@@ -19,7 +19,7 @@ export const findById = async (req, res) => {
   try {
     const { id_director } = req.params;
     const [result] = await pool.query(
-      "SELECT name,nationality,birth_date,birth_place FROM directors WHERE is_active = 1 AND id_director = ?",
+      "SELECT id_director,name,nationality,DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,birth_place FROM directors WHERE is_active = 1 AND id_director = ?",
       [id_director]
     );
     if (result.length === 0) {
@@ -36,7 +36,7 @@ export const findByName = async (req, res) => {
   try {
     const { name } = req.params;
     const [result] = await pool.query(
-      `SELECT name,nationality,birth_date,birth_place FROM directors WHERE is_active = 1 AND name LIKE "${name}%"`
+      `SELECT id_director,name,nationality,DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,birth_place FROM directors WHERE is_active = 1 AND name LIKE "${name}%"`
     );
     if (result.length === 0) {
       return res.status(404).json(result);
@@ -52,7 +52,7 @@ export const findByNationality = async (req, res) => {
   try {
     const { nationality } = req.params;
     const [result] = await pool.query(
-      `SELECT name,nationality,birth_date,birth_place FROM directors WHERE is_active = 1 AND nationality LIKE "${nationality}%"`
+      `SELECT id_director,name,nationality,DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,birth_place FROM directors WHERE is_active = 1 AND nationality LIKE "${nationality}%"`
     );
     if (result.length === 0) {
       return res.status(404).json(result);
